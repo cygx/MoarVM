@@ -196,12 +196,14 @@ OBJECTS = src/core/callsite@obj@ \
           src/profiler/log@obj@ \
           src/profiler/profile@obj@ \
           src/instrument/crossthreadwrite@obj@ \
+          src/embed@obj@ \
           src/moar@obj@ \
           @platform@ \
           @jit@
 
 
 HEADERS = src/moar.h \
+          src/moarembed.h \
           src/types.h \
           src/bithacks.h \
           src/6model/6model.h \
