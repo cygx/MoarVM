@@ -11,9 +11,6 @@ void MVM_load_bytecode(MVMThreadContext *tc, MVMString *filename) {
     MVMCompUnit *cu;
     MVMLoadedCompUnitName *loaded_name;
 
-    /* Work out actual filename to use, taking --libpath into account. */
-    filename = MVM_file_in_libpath(tc, filename);
-
     /* See if we already loaded this. */
     uv_mutex_lock(&tc->instance->mutex_loaded_compunits);
     MVM_string_flatten(tc, filename);
@@ -24,13 +21,22 @@ void MVM_load_bytecode(MVMThreadContext *tc, MVMString *filename) {
         return;
     }
 
-    /* Otherwise, load from disk. */
     MVMROOT(tc, filename, {
-        char *c_filename = MVM_string_utf8_encode_C_string(tc, filename);
-        /* XXX any exception from MVM_cu_map_from_file needs to be handled
-         *     and c_filename needs to be freed */
-        cu = MVM_cu_map_from_file(tc, c_filename);
-        MVM_free(c_filename);
+        /* Check if the file is virtual. */
+        cu = MVM_cu_from_virtual_file(tc, filename);
+
+        /* Otherwise, load from disk. */
+        if (!cu) {
+            /* Work out actual filename to use, taking --libpath into account. */
+            MVMString *path = MVM_file_in_libpath(tc, filename);
+            char    *c_path = MVM_string_utf8_encode_C_string(tc, path);
+
+            /* XXX any exception from MVM_cu_map_from_file needs to be handled
+             *     and c_filename needs to be freed */
+            cu = MVM_cu_map_from_file(tc, c_path);
+            MVM_free(c_path);
+        }
+
         cu->body.filename = filename;
 
         /* If there's a deserialization frame, need to run that. */

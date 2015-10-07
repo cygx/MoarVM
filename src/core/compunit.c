@@ -30,7 +30,8 @@ MVMCompUnit * MVM_cu_from_bytes(MVMThreadContext *tc, MVMuint8 *bytes, MVMuint32
     return cu;
 }
 
-/* Loads a compilation unit from a bytecode file, mapping it into memory. */
+/* Loads a compilation unit from a physical bytecode file, mapping it
+ * into memory. */
 MVMCompUnit * MVM_cu_map_from_file(MVMThreadContext *tc, const char *filename) {
     MVMCompUnit *cu          = NULL;
     void        *block       = NULL;
@@ -65,6 +66,19 @@ MVMCompUnit * MVM_cu_map_from_file(MVMThreadContext *tc, const char *filename) {
     cu->body.handle = handle;
     cu->body.deallocate = MVM_DEALLOCATE_UNMAP;
     return cu;
+}
+
+/* Loads a compilation unit from a virtual file, returning NULL if there
+ * is no such file. */
+MVMCompUnit * MVM_cu_from_virtual_file(MVMThreadContext *tc, MVMString *filename) {
+    MVMVirtualFile *vf;
+
+    /* Check if the file is virtual. */
+    uv_mutex_lock(&tc->instance->mutex_virtual_files);
+    MVM_HASH_GET(tc, tc->instance->virtual_files, filename, vf);
+    uv_mutex_unlock(&tc->instance->mutex_virtual_files);
+
+    return vf ? MVM_cu_from_bytes(tc, vf->bytes, vf->size) : NULL;
 }
 
 /* Adds an extra callsite, needed due to an inlining, and returns its index. */

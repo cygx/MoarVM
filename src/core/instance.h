@@ -308,6 +308,10 @@ struct MVMInstance {
     MVMuint32                     all_scs_next_idx;
     MVMuint32                     all_scs_alloc;
 
+    /* Hash of virtual bytecode files. */
+    MVMVirtualFile  *virtual_files;
+    uv_mutex_t mutex_virtual_files;
+
     /* Hash of filenames of compunits loaded from disk. */
     MVMLoadedCompUnitName *loaded_compunits;
     uv_mutex_t       mutex_loaded_compunits;

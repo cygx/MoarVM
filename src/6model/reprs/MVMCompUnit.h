@@ -116,6 +116,18 @@ struct MVMCompUnit {
     MVMCompUnitBody body;
 };
 
+struct MVMVirtualFile {
+    /* Corresponding filename. */
+    MVMString *filename;
+
+    /* The bytecode. */
+    MVMuint8 *bytes;
+    MVMuint32 size;
+
+    /* Inline handle to the virtual files hash (in MVMInstance). */
+    UT_hash_handle hash_handle;
+};
+
 struct MVMLoadedCompUnitName {
     /* Loaded filename. */
     MVMString *filename;
