@@ -38,7 +38,8 @@ struct MVMEmbedAPIv1 {
     void (*set_prog_name)(MoarVM *vm, const char *name);
     void (*set_clargs)(MoarVM *vm, int argc, char **argv);
     void (*set_lib_path)(MoarVM *vm, int count, const char **paths);
-    void (*run_file)(MoarVM *vm, const char *path);
+    void (*run_file)(MoarVM *vm, const char *filename);
+    void (*dump_file)(MoarVM *vm, const char *filename);
 };
 
 MVM_STATIC_INLINE int MoarAPI_load(MoarAPI *api, const char *path) {

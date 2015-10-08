@@ -16,6 +16,7 @@ MVM_PUBLIC int MVM_embed_load_api(void *api, unsigned version) {
             v1->set_clargs = MVM_vm_set_clargs;
             v1->set_lib_path = MVM_vm_set_lib_path;
             v1->run_file = MVM_vm_run_file;
+            v1->dump_file = MVM_vm_dump_file;
             /* fallthrough */
         }
 
