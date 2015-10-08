@@ -3,16 +3,24 @@
 
 #define MVM_EMBED_VERSION 1
 
-#ifndef MVM_STATIC_INLINE
-#define MVM_STATIC_INLINE static inline
+#ifdef MVM_STATIC_INLINE
+#define MVM_EMBED_STATIC_INLINE MVM_STATIC_INLINE
+#elif defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L
+#define MVM_EMBED_STATIC_INLINE static inline
+#elif defined __GNUC__
+#define MVM_EMBED_STATIC_INLINE static __inline__
+#elif defined _MSC_VER
+#define MVM_EMBED_STATIC_INLINE static __inline
+#else
+#define MVM_EMBED_STATIC_INLINE static
 #endif
 
 #ifdef _WIN32
 #include <windows.h>
 #define MVM_embed_dlopen(PATH) LoadLibraryExA(PATH, NULL, \
     LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS)
-#define MVM_embed_dlclose(LIB) !FreeLibrary(LIB)
-#define MVM_embed_dlsym(LIB, SYM) (void *)GetProcAddress(LIB, SYM)
+#define MVM_embed_dlclose(LIB) !FreeLibrary((HMODULE)(LIB))
+#define MVM_embed_dlsym(LIB, SYM) (void *)GetProcAddress((HMODULE)(LIB), SYM)
 #else
 #include <dlfcn.h>
 #define MVM_embed_dlopen(PATH) dlopen(PATH, RTLD_LAZY)
@@ -42,8 +50,8 @@ struct MVMEmbedAPIv1 {
     void (*dump_file)(MoarVM *vm, const char *filename);
 };
 
-MVM_STATIC_INLINE int MoarAPI_load(MoarAPI *api, const char *path) {
-    static const MoarAPI NULLAPI;
+MVM_EMBED_STATIC_INLINE int MoarAPI_load(MoarAPI *api, const char *path) {
+    static const MoarAPI NULLAPI = { 0 };
     int (*load)(void *, unsigned);
 
     *api = NULLAPI;
@@ -58,8 +66,8 @@ MVM_STATIC_INLINE int MoarAPI_load(MoarAPI *api, const char *path) {
     return load && load(api, MVM_EMBED_VERSION);
 }
 
-MVM_STATIC_INLINE int MoarAPI_unload(MoarAPI *api) {
-    static const MoarAPI NULLAPI;
+MVM_EMBED_STATIC_INLINE int MoarAPI_unload(MoarAPI *api) {
+    static const MoarAPI NULLAPI = { 0 };
 
     if (!api->lib)
         return 1;
