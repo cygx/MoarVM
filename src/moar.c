@@ -222,7 +222,7 @@ static void toplevel_initial_invoke(MVMThreadContext *tc, void *data) {
 
 /* Registers a buffer under a given filename so bytecode can be loaded
  * from memory instead of disk. */
-void MVM_vm_add_virtual_file(MVMInstance *instance, const char *c_filename, MVMuint8 *bytes, MVMuint32 size) {
+void MVM_vm_add_virtual_file(MVMInstance *instance, const char *c_filename, const unsigned char *bytes, size_t size) {
     MVMThreadContext *tc = instance->main_thread;
     MVMString *filename = MVM_string_utf8_decode(tc, instance->VMString, c_filename, strlen(c_filename));
     MVMVirtualFile *vf;
@@ -237,8 +237,9 @@ void MVM_vm_add_virtual_file(MVMInstance *instance, const char *c_filename, MVMu
 
     vf = MVM_malloc(sizeof *vf);
     vf->filename = filename;
-    vf->bytes = bytes;
-    vf->size = size;
+    /* XXX better add const qualfiers to MVMCompUnit et al */
+    vf->bytes = (MVMuint8 *)bytes;
+    vf->size = (MVMuint32)size;
 
     MVM_gc_root_add_permanent(tc, (MVMCollectable **)&vf->filename);
 
