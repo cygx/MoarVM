@@ -182,6 +182,7 @@ MVMObject *MVM_backend_config(MVMThreadContext *tc);
 
 /* Top level VM API functions. */
 MVM_PUBLIC MVMInstance * MVM_vm_create_instance(void);
+MVM_PUBLIC void MVM_vm_add_virtual_file(MVMInstance *instance, const char *filename, MVMuint8 *bytes, MVMuint32 size);
 MVM_PUBLIC void MVM_vm_run_file(MVMInstance *instance, const char *filename);
 MVM_PUBLIC void MVM_vm_dump_file(MVMInstance *instance, const char *filename);
 MVM_PUBLIC MVM_NO_RETURN void MVM_vm_exit(MVMInstance *instance) MVM_NO_RETURN_GCC;

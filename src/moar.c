@@ -58,6 +58,9 @@ MVMInstance * MVM_vm_create_instance(void) {
     /* Set up weak reference hash mutex. */
     init_mutex(instance->mutex_sc_weakhash, "sc weakhash");
 
+    /* Set up virtual files hash mutex. */
+    init_mutex(instance->mutex_virtual_files, "virtual files");
+
     /* Set up loaded compunits hash mutex. */
     init_mutex(instance->mutex_loaded_compunits, "loaded compunits");
 
@@ -217,21 +220,50 @@ static void toplevel_initial_invoke(MVMThreadContext *tc, void *data) {
     MVM_frame_invoke(tc, (MVMStaticFrame *)data, MVM_callsite_get_common(tc, MVM_CALLSITE_ID_NULL_ARGS), NULL, NULL, NULL, -1);
 }
 
+/* Registers a buffer under a given filename so bytecode can be loaded
+ * from memory instead of disk. */
+void MVM_vm_add_virtual_file(MVMInstance *instance, const char *c_filename, MVMuint8 *bytes, MVMuint32 size) {
+    MVMThreadContext *tc = instance->main_thread;
+    MVMString *filename = MVM_string_utf8_decode(tc, instance->VMString, c_filename, strlen(c_filename));
+    MVMVirtualFile *vf;
+
+    uv_mutex_lock(&instance->mutex_virtual_files);
+
+    MVM_HASH_GET(tc, instance->virtual_files, filename, vf);
+    if(vf) {
+        uv_mutex_unlock(&instance->mutex_virtual_files);
+        MVM_oops(tc, "virtual file '%s' already exists", c_filename);
+    }
+
+    vf = MVM_malloc(sizeof *vf);
+    vf->filename = filename;
+    vf->bytes = bytes;
+    vf->size = size;
+
+    MVM_gc_root_add_permanent(tc, (MVMCollectable **)&vf->filename);
+
+    MVM_HASH_BIND(tc, instance->virtual_files, filename, vf);
+    uv_mutex_unlock(&instance->mutex_virtual_files);
+}
+
 /* Loads bytecode from the specified file name and runs it. */
 void MVM_vm_run_file(MVMInstance *instance, const char *filename) {
     MVMStaticFrame *start_frame;
 
     /* Map the compilation unit into memory and dissect it. */
     MVMThreadContext *tc = instance->main_thread;
-    MVMCompUnit      *cu = MVM_cu_map_from_file(tc, filename);
+    MVMString *str       = MVM_string_utf8_decode(tc, instance->VMString, filename, strlen(filename));
+    MVMCompUnit *cu;
 
-    MVMROOT(tc, cu, {
-        /* The call to MVM_string_utf8_decode() may allocate, invalidating the
-           location cu->body.filename */
-        MVMString *const str = MVM_string_utf8_decode(tc, instance->VMString, filename, strlen(filename));
+    /* Load compilation unit from virtual or physical file. */
+    MVMROOT(tc, str, {
+        cu = MVM_cu_from_virtual_file(tc, str);
+        if(!cu) cu = MVM_cu_map_from_file(tc, filename);
         cu->body.filename = str;
+    });
 
-        /* Run deserialization frame, if there is one. */
+    /* Run deserialization frame, if there is one. */
+    MVMROOT(tc, cu, {
         if (cu->body.deserialize_frame) {
             MVM_interp_run(tc, toplevel_initial_invoke, cu->body.deserialize_frame);
         }
@@ -316,6 +348,10 @@ void MVM_vm_destroy_instance(MVMInstance *instance) {
     /* Clean up Hash of all known serialization contexts. */
     uv_mutex_destroy(&instance->mutex_sc_weakhash);
     MVM_HASH_DESTROY(hash_handle, MVMSerializationContextBody, instance->sc_weakhash);
+
+    /* Clean up Hash of virtual files. */
+    uv_mutex_destroy(&instance->mutex_virtual_files);
+    MVM_HASH_DESTROY(hash_handle, MVMVirtualFile, instance->virtual_files);
 
     /* Clean up Hash of filenames of compunits loaded from disk. */
     uv_mutex_destroy(&instance->mutex_loaded_compunits);
