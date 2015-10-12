@@ -18,7 +18,7 @@
 #ifdef _WIN32
 #include <windows.h>
 #define MVM_embed_dlopen(PATH) LoadLibraryExA(PATH, NULL, \
-    LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS)
+    LOAD_WITH_ALTERED_SEARCH_PATH)
 #define MVM_embed_dlclose(LIB) !FreeLibrary((HMODULE)(LIB))
 #define MVM_embed_dlsym(LIB, SYM) (void *)GetProcAddress((HMODULE)(LIB), SYM)
 #else
@@ -48,6 +48,8 @@ struct MVMEmbedAPIv1 {
     void (*set_lib_path)(MoarVM *vm, int count, const char **paths);
     void (*run_file)(MoarVM *vm, const char *filename);
     void (*dump_file)(MoarVM *vm, const char *filename);
+    void (*add_virtual_file)(MoarVM *cm, const char *filename,
+        const unsigned char *bytes, size_t size);
 };
 
 MVM_EMBED_STATIC_INLINE int MoarAPI_load(MoarAPI *api, const char *path) {
