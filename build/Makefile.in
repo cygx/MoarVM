@@ -111,6 +111,7 @@ OBJECTS1 = src/core/callsite@obj@ \
           src/core/intcache@obj@ \
           src/core/fixedsizealloc@obj@ \
           src/core/regionalloc@obj@ \
+          src/core/mem@obj@ \
           src/debug/debugserver@obj@ \
           src/gen/config@obj@ \
           src/gc/orchestrate@obj@ \
@@ -279,6 +280,7 @@ HEADERS = src/moar.h \
           src/core/intcache.h \
           src/core/fixedsizealloc.h \
           src/core/regionalloc.h \
+          src/core/mem.h \
           src/debug/debugserver.h \
           src/io/io.h \
           src/io/eventloop.h \

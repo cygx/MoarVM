@@ -5619,6 +5619,18 @@ void MVM_interp_run(MVMThreadContext *tc, void (*initial_invoke)(MVMThreadContex
                 GET_REG(cur_op, 0).i64 = MVM_platform_total_memory();
                 cur_op += 2;
                 goto NEXT;
+            OP(memread): {
+                MVM_mem_read(tc, GET_REG(cur_op, 0).o, GET_REG(cur_op, 2).u64,
+                        GET_REG(cur_op, 4).u64, GET_REG(cur_op, 6).i64);
+                cur_op += 8;
+                goto NEXT;
+            }
+            OP(memwrite): {
+                MVM_mem_write(tc, GET_REG(cur_op, 0).o, GET_REG(cur_op, 2).u64,
+                        GET_REG(cur_op, 4).u64, GET_REG(cur_op, 6).i64);
+                cur_op += 8;
+                goto NEXT;
+            }
             OP(sp_guard): {
                 MVMRegister *target = &GET_REG(cur_op, 0);
                 MVMObject *check = GET_REG(cur_op, 2).o;
